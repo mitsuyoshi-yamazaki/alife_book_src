@@ -4,16 +4,16 @@
 import sys, os
 sys.path.append(os.pardir)  # 親ディレクトリのファイルをインポートするための設定
 import numpy as np
-from alifebook_lib.visualizers import MatrixVisualizer
-
-# visualizerの初期化 (Appendix参照)
-visualizer = MatrixVisualizer()
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import matplotlib.animation as animation
+import matplotlib.cm as cm
 
 # シミュレーションの各パラメタ
 SPACE_GRID_SIZE = 256
 dx = 0.01
 dt = 1
-VISUALIZATION_STEP = 8  # 何ステップごとに画面を更新するか。
+VISUALIZATION_STEP = 172  # 何ステップごとに画面を更新するか。 # どうもimshowの実行が遅いので数値を大きくしている
 
 # モデルの各パラメタ
 Du = 2e-5
@@ -37,17 +37,31 @@ v[SPACE_GRID_SIZE//2-SQUARE_SIZE//2:SPACE_GRID_SIZE//2+SQUARE_SIZE//2,
 u += np.random.rand(SPACE_GRID_SIZE, SPACE_GRID_SIZE)*0.1
 v += np.random.rand(SPACE_GRID_SIZE, SPACE_GRID_SIZE)*0.1
 
-while visualizer:  # visualizerはウィンドウが閉じられるとFalseを返す
-    for i in range(VISUALIZATION_STEP):
-        # ラプラシアンの計算
-        laplacian_u = (np.roll(u, 1, axis=0) + np.roll(u, -1, axis=0) +
-                       np.roll(u, 1, axis=1) + np.roll(u, -1, axis=1) - 4*u) / (dx*dx)
-        laplacian_v = (np.roll(v, 1, axis=0) + np.roll(v, -1, axis=0) +
-                       np.roll(v, 1, axis=1) + np.roll(v, -1, axis=1) - 4*v) / (dx*dx)
-        # Gray-Scottモデル方程式
-        dudt = Du*laplacian_u - u*v*v + f*(1.0-u)
-        dvdt = Dv*laplacian_v + u*v*v - (f+k)*v
-        u += dt * dudt
-        v += dt * dvdt
-    # 表示をアップデート
-    visualizer.update(u)
+value_range_min=0
+value_range_max=1
+
+value_range = (value_range_min, value_range_max)
+
+def frames(*args, **kwargs):
+  global u, v, value_range, im
+  for i in range(VISUALIZATION_STEP):
+    # ラプラシアンの計算
+    laplacian_u = (np.roll(u, 1, axis=0) + np.roll(u, -1, axis=0) +
+                    np.roll(u, 1, axis=1) + np.roll(u, -1, axis=1) - 4*u) / (dx*dx)
+    laplacian_v = (np.roll(v, 1, axis=0) + np.roll(v, -1, axis=0) +
+                    np.roll(v, 1, axis=1) + np.roll(v, -1, axis=1) - 4*v) / (dx*dx)
+    # Gray-Scottモデル方程式
+    dudt = Du*laplacian_u - u*v*v + f*(1.0-u)
+    dvdt = Dv*laplacian_v + u*v*v - (f+k)*v
+    u += dt * dudt
+    v += dt * dvdt
+    matrix = u
+    matrix[matrix < value_range[0]] = value_range[0]
+    matrix[matrix > value_range[1]] = value_range[1]
+  img = ((matrix.astype(np.float64) - value_range[0]) / (value_range[1] - value_range[0]) * 255).astype(np.uint8)
+  return [plt.imshow(img, interpolation='none')]
+
+
+fig = plt.figure()
+anim = animation.FuncAnimation(fig, frames, interval=100)
+plt.show()
