@@ -1,2 +1,2 @@
 import vispy
-vispy.use('ipynb_webgl')
+vispy.use('ipynb_vnc')
