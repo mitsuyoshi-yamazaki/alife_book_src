@@ -1,2 +1,2 @@
 import vispy
-vispy.use('PyQt5')
+vispy.use('ipynb_webgl')
